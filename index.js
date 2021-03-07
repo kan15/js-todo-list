@@ -1,69 +1,83 @@
-const todoInput = document.getElementById('todoInput');
-const todoList = document.getElementById('todoList');
+(function () {
+  const todoInput = document.getElementById('todoInput');
+  const todoList = document.getElementById('todoList');
 
-const doneElement = (el) => { //
-  el.classList.toggle("done");
-  const changeEl = el.parentNode.id;
-  toDoList.toggleTask(changeEl);
-}
+  const listItemForCopy = document.querySelector('.for-copy').cloneNode(true);
 
-const clickDelete = (el) => {
-  const deteledId = el.parentNode.id;
-  toDoList.deleteTask(deteledId);
+  document.querySelector('.for-copy').remove();
+  listItemForCopy.classList.remove('for-copy');
+
+  const getInitialDataStorage = () => {
+    const items = { ...localStorage };
+    const keys = Object.keys(items);
+    const prevTasks = [];
+    keys.forEach((key) => {
+      const task = JSON.parse(localStorage.getItem(key));
+      prevTasks.push(task);
+    });
+    toDoList.applyLocalData(prevTasks);
+  };
+
+  window.onload = getInitialDataStorage;
+
+  const doneElement = (task) => {
+    const item = JSON.parse(localStorage.getItem(task.id));
+    item.isDone = !item.isDone;
+    localStorage.removeItem(task.id);
+    localStorage.setItem(task.id, JSON.stringify(item));
+    toDoList.toggleTask(task);
+    renderElements();
+  };
+
+  const clickDelete = (task) => {
+    localStorage.removeItem(task.id);
+    toDoList.deleteTask(task);
+    renderElements();
+  };
+
+  const renderElements = () => {
+    todoList.innerHTML = ''; //clear our previous list
+    const items = { ...localStorage };
+    const keys = Object.keys(items);
+    keys.forEach((key) => {
+      const task = JSON.parse(localStorage.getItem(key));
+      const newTask = listItemForCopy.cloneNode(true);
+      const span = newTask.querySelector('span');
+      span.innerHTML = task.task;
+      task.isDone ? span.classList.add('done') : span.classList.remove('done');
+      newTask.id = key;
+      todoList.append(newTask);
+      newTask.querySelector('button').addEventListener('click', function (e) {
+        //add event when user delete the task
+        clickDelete(task);
+      });
+      newTask.querySelector('span').addEventListener('click', function (e) {
+        //add event when user done the task
+        doneElement(task);
+      });
+    });
+  };
+
+  const addTaskScreen = (newTask) => {
+    //add new task to the end of array
+    const textTasks = toDoList.getTasks();
+    if (textTasks.find((item) => item.task === newTask)) {
+      alert('This task is already on the list');
+    } else if (newTask === '') {
+      alert('An empty task cannot be added');
+    } else {
+      //local storage
+      const readyTask = toDoList.addTask(newTask);
+      localStorage.setItem(readyTask.id, JSON.stringify(readyTask));
+      renderElements();
+    }
+  };
+
+  document.querySelector('form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    addTaskScreen(todoInput.value);
+    todoInput.value = '';
+  });
+
   renderElements();
-}
-
-const renderElements = () => {
-  todoList.innerHTML = '';//clear our previous list
-  const tasks = toDoList.getTasks();
-  tasks.forEach(item => { //create new list from our array
-    const deleteBtn = document.createElement('button');
-    deleteBtn.innerHTML = 'X';
-    deleteBtn.classList.add('deleteBtn');
-    deleteBtn.addEventListener("click", function (e) { //add event when user delete the task
-      clickDelete(this);
-    })
-
-    const newli = document.createElement("li");
-    const newSpan = document.createElement("span");
-    newSpan.addEventListener("click", function (e) { //add event when user done the task
-      doneElement(this);
-    })
-    newli.id = item.id;
-    newSpan.innerHTML = item.task;
-    newli.append(newSpan);
-    newli.append(deleteBtn);
-    todoList.append(newli);
-  })
-}
-
-const addTaskScreen = (newTask) => { //add new task to the end of array
-  const textTasks = toDoList.getTasks();
-  if(textTasks.find(item => item.task === newTask)) { 
-    alert('This task is already on the list');
-  } else {
-    const deleteBtn = document.createElement('button');
-    deleteBtn.innerHTML = 'X';
-    deleteBtn.classList.add('deleteBtn');
-    deleteBtn.addEventListener("click", function (e) { //add event when user delete the task
-      clickDelete(this);
-    })
-    const idForLi = toDoList.addTask(newTask);//create and add tasks to our general array. and get new id from our array for our li
-    const newli = document.createElement("li");
-    const newSpan = document.createElement("span");
-    newli.id = idForLi;
-    newSpan.innerHTML = `${newTask}`;
-    newSpan.addEventListener("click", function (e) { //add event when user done the task
-      doneElement(this);
-    })
-    newli.append(newSpan);
-    newli.append(deleteBtn);
-    todoList.append(newli);
-  }
-}
-
-document.querySelector('form').addEventListener('submit', (e) => {
-  e.preventDefault();
-  addTaskScreen(todoInput.value);
-  todoInput.value = '';
-});
+})();
