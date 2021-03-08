@@ -1,17 +1,18 @@
 const toDoList = (() => {
   let tasks = [];
   let i = 0;
+  let onListChanged = (tasks) => {};
 
   const addTask = (text) => {
     const newTask = {
       id: ++i,
       isDone: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt: new Date(),
+      updatedAt: new Date(),
       task: text,
     };
     tasks = [...tasks, newTask];
-    console.log(tasks);
+    onListChanged(tasks);
     return newTask;
   };
 
@@ -19,22 +20,30 @@ const toDoList = (() => {
     const index = tasks.findIndex((elem) => elem.task === item.task);
     tasks = [
       ...tasks.slice(0, index),
-      { ...item, isDone: !item.isDone, updatedAt: new Date().toISOString() },
+      { ...item, isDone: !item.isDone, updatedAt: new Date() },
       ...tasks.slice(index + 1),
     ];
+    onListChanged(tasks);
   };
 
   const applyLocalData = (arr) => {
     tasks = [...arr];
-    tasks.forEach((task) => (i = task.id > i ? task.id : i));
+    onListChanged(tasks);
+    // tasks.forEach((task) => (i = task.id > i ? task.id : i));
   };
 
   const deleteTask = (item) => {
-    tasks = tasks.filter((elem) => elem.task != item.task); //The object is not equal to the same object. It is not the whole object that is to be compared, but certain properties.
+    //The object is not equal to the same object. It is not the whole object that is to be compared, but certain properties.
+    tasks = tasks.filter((elem) => elem.task != item.task);
+    onListChanged(tasks);
   };
 
   const getTasks = () => {
     return tasks;
+  };
+
+  const setOnListChanged = (callback) => {
+    onListChanged = callback;
   };
 
   return {
@@ -43,5 +52,6 @@ const toDoList = (() => {
     toggleTask,
     deleteTask,
     applyLocalData,
+    setOnListChanged,
   };
 })();
